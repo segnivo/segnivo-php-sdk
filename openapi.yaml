@@ -1,0 +1,1566 @@
+openapi: 3.0.0
+info:
+  title: Segnivo Developer API
+  description: |-
+    **API Version**: 1.7
+
+    **Date**: 9th July, 2024
+
+    ## 📄 Getting Started
+
+    This API is based on the REST API architecture, allowing the user to easily manage their data with this resource-based approach.
+
+    Every API call is established on which specific request type (GET, POST, PUT, DELETE) will be used.
+
+    The API must not be abused and should be used within acceptable limits.
+
+    To start using this API, you will need not create or access an existing Segnivo account to obtain your API key ([retrievable from your account settings](https://messaging.segnivo.com/account/api)).
+
+    - You must use a valid API Key to send requests to the API endpoints.
+        
+    - The API only responds to HTTPS-secured communications. Any requests sent via HTTP return an HTTP 301 redirect to the corresponding HTTPS resources.
+        
+    - The API returns request responses in JSON format. When an API request returns an error, it is sent in the JSON response as an error key or with details in the message key.
+        
+
+    ### 🔖 **Need some help?**
+
+    In case you have questions or need clarity with interacting with some endpoints feel free to create a support ticket on your account or you can send an email ([<i>developers@segnivo.com</i>](https://mailto:developers@segnivo.com)) directly and we would be happy to help.
+
+    ---
+
+    ## Authentication
+
+    As noted earlier, this API uses API keys for authentication. You can generate a Segnivo API key in the [API](https://messaging.segnivo.com/account/api) section of your account settings.
+
+    You must include an API key in each request to this API with the `X-API-KEY` request header.
+
+    ### Authentication error response
+
+    If an API key is missing, malformed, or invalid, you will receive an HTTP 401 Unauthorized response code.
+
+    ## Rate and usage limits
+
+    API access rate limits apply on a per-API endpoint basis in unit time. The limit is 10k requests per hour for most endpoints and 1m requests per hour for transactional/relay email-sending endpoints. Also, depending on your plan, you may have usage limits. If you exceed either limit, your request will return an HTTP 429 Too Many Requests status code or HTTP 403 if sending credits have been exhausted.
+
+    ### 503 response
+
+    An HTTP `503` response from our servers may indicate there is an unexpected spike in API access traffic, while this rarely happens, we ensure the server is usually operational within the next two to five minutes. If the outage persists or you receive any other form of an HTTP `5XX` error, contact support ([<i>developers@segnivo.com</i>](https://mailto:developers@segnivo.com)).
+
+    ### Request headers
+
+    To make a successful request, some or all of the following headers must be passed with the request.
+
+    | **Header** | **Description** |
+    | --- | --- |
+    | Content-Type | Required and should be `application/json` in most cases. |
+    | Accept | Required and should be `application/json` in most cases |
+    | Content-Length | Required for `POST`, `PATCH`, and `PUT` requests containing a request body. The value must be the number of bytes rather than the number of characters in the request body. |
+    | X-API-KEY | Required. Specifies the API key used for authorization. |
+
+    ##### 🔖 Note with example requests and code snippets
+
+    If/when you use the code snippets used as example requests, remember to calculate and add the `Content-Length` header. Some request libraries, frameworks, and tools automatically add this header for you while a few do not. Kindly check and ensure yours does or add it yourself.
+  version: 1.0.0
+servers:
+  - url: https://api.segnivo.com/v1
+
+components:
+  schemas:
+    AddContactRequest:
+      type: object
+      properties:
+        list_uid:
+          type: string
+          description: "Unique identifier for the mailing list."
+        email:
+          type: string
+          description: "Subscriber's email address."
+        first_name:
+          type: string
+          description: "Subscriber's first name."
+        last_name:
+          type: string
+          description: "Subscriber's last name."
+        tag:
+          type: string
+          description: "Tag to categorize the subscriber."
+      required:
+        - list_uid
+        - email
+    RelayEmailRequest:
+      type: object
+      properties:
+        subject:
+          type: string
+          description: "The subject of the email"
+        from_name:
+          type: string
+          description: "The full name of the sender"
+        from_email:
+          type: string
+          description: "The email of the sender"
+        reply_to:
+          type: string
+          description: "The email to which replies should be sent"
+        content_type:
+          type: string
+          description: "The content type of the email body"
+          enum:
+            - text
+            - html
+          default: html
+        recipients:
+          type: array
+          items:
+            type: string
+          maxItems: 50
+          description: "An array of email addresses to deliver this message"
+        content:
+          type: string
+          description: "The HTML or plain text content of the email"
+        preheader:
+          type: string
+          description: "The email preheader"
+        custom_headers:
+          type: object
+          description: "An object of custom headers to add to the email"
+        delivery_at:
+          type: integer
+          description: "The 10-digit unix timestamp of the date/time at which this email should be delivered"
+        attachments:
+          type: array
+          items:
+            type: string
+          description: "An array of URLs of files to attach to the email"
+        sign_dkim:
+          type: boolean
+          description: "A boolean value on if a DKIM signature should be included in this message"
+          default: true
+        track_click:
+          type: boolean
+          description: "A boolean value on if email clicks should be tracked"
+          default: true
+        track_open:
+          type: boolean
+          description: "A boolean value on if the email opens should be tracked"
+          default: true
+        is_transactional:
+          type: boolean
+          description: "A boolean value to flag this email as a transactional email"
+          default: false
+    RelayRawEmailRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          description: The raw email content in RFC822 format. This should include headers, body content, and any attachments.
+          example: "From: sender@example.com\nTo: recipient@example.com\nSubject: Test Email\n\nThis is a test email message."
+        is_transactional:
+          type: boolean
+          description: Indicates whether the email is transactional (e.g., receipts, order confirmations) or marketing. Transactional emails typically bypass unsubscribes.
+          example: true
+        track_click:
+          type: boolean
+          description: Enables or disables click tracking within the email. When enabled, any hyperlinks in the email will be tracked to gather analytics on user interactions.
+          example: false
+        track_open:
+          type: boolean
+          description: Enables or disables open tracking for the email. When enabled, a tracking pixel is embedded in the email to monitor whether the recipient has opened it.
+          example: false
+        sign_dkim:
+          type: boolean
+          description: Specifies whether the email should be signed with a DKIM (DomainKeys Identified Mail) signature. DKIM helps improve email deliverability by ensuring the email's integrity.
+          example: true
+    CampaignCreateRequest:
+      type: object
+      properties:
+        mail_list_uid:
+          type: string
+          description: "Unique identifier for the mailing list"
+        name:
+          type: string
+          description: "Name of the campaign"
+        subject:
+          type: string
+          description: "Subject of the email campaign"
+        from_email:
+          type: string
+          description: "Sender's email address"
+        from_name:
+          type: string
+          description: "Sender's full name"
+        reply_to:
+          type: string
+          description: "Email address for replies"
+    CampaignUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Your Campaign Name"
+        subject:
+          type: string
+          example: "Welcome to our service!"
+        from_email:
+          type: string
+          format: email
+          example: "no-reply@example.com"
+        from_name:
+          type: string
+          example: "Example Team"
+        reply_to:
+          type: string
+          format: email
+          example: "support@example.com"
+      required:
+        - name
+        - subject
+        - from_email
+        - from_name
+        - reply_to
+    MailingListRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the email template or campaign. This is used for internal identification and organization.
+          example: "Welcome Email"
+        from_email:
+          type: string
+          description: The sender's email address that will appear in the "From" field of the email.
+          example: "no-reply@example.com"
+        from_name:
+          type: string
+          description: The sender's name that will appear in the "From" field of the email.
+          example: "Example Company"
+        contact:
+          type: object
+          description: Contact details for the email sender or organization. Used for compliance with email regulations (e.g., CAN-SPAM).
+          properties:
+            email:
+              type: string
+              description: The email address of the sender or organization. Usually used for replies or compliance purposes.
+              example: "support@example.com"
+            company:
+              type: string
+              description: The name of the organization sending the email.
+              example: "Example Company Inc."
+      required:
+        - name
+        - from_email
+        - from_name
+        - contact
+          - email
+          - company
+
+    EmailAddressVerificationRequest:
+      type: object
+      properties:
+        emails:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          maxItems: 50
+          description: "List of email addresses to validate"
+    ContactUpdateRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          description: "Updated email address"
+        first_name:
+          type: string
+          description: "Updated first name"
+        last_name:
+          type: string
+          description: "Updated last name"
+    MailingListAddFieldRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          description: The type of input field to be created. This defines the behavior and appearance of the input.
+          example: "text"
+        label:
+          type: string
+          description: The label associated with the input field. This is typically displayed to the user as a descriptor.
+          example: "Enter your name"
+        tag:
+          type: string
+          description: A unique identifier or tag for the input field, useful for internal processing or referencing the field in the system.
+          example: "username"
+        default_value:
+          type: string
+          description: The default value pre-filled in the input field when it is rendered. This is optional and can be left blank.
+          example: "John Doe"
+      required:
+        - type
+        - label
+        - tag
+
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+security:
+  - apiKeyAuth: []
+tags:
+  - name: Relay Transactional Emails
+    description: |-
+      The `/relay` endpoints lets you send/fetch marketing and transactional emails from your `Segnivo Messaging` account.
+
+      Email messages sent through these endpoints are categorized into two:
+
+      - **Marketing Emails** - These are emails sent for marketing or promotional purposes.
+          
+      - **Transactional Emails** - These are emails sent as a result of user actions or requests, they usually take the form of notifications or One-Time-Passwords (OTPs), e.g. password reset requests.
+          
+
+      By default, emails sent through these endpoints are set as marketing emails except when marked as transactional with the **`is_transactional`** attribute.
+
+      Sending a marketing email through these endpoints consumes **1 sending credit** on your account _if the email is sent successfully_.
+
+      Also, based on our current pricing structure, sending 1 marketing email equals sending 5 transactional emails; thus, **1 transactional email consumes 0.2 sending credit** on your account.
+
+      In addition, bounced emails consume credits, i.e., once an email is sent successfully, 1 sending credit will be deducted even if the email is bounced/rejected by the recipient's MX server.
+
+      #### 🔖 Domain Verification, DKIM Signatures, and Spam
+
+      Before sending your first email, we highly recommend you [add and verify](https://messaging.segnivo.com/sending_domains) your **sending domain** in your `Segnivo Messaging` account, i.e., the domain of the **`from_email`** from which your emails will come. For example, if you would be sending emails from [support@example.com](https://mailto:support@example.com), example.com should be added and verified as a sending domain.
+
+      <img src="https://content.pstmn.io/cd8a6847-5d05-4c0f-87b4-4bab99d4196d/c2QtdmVyaWZ5LTEucG5n">
+
+      <img src="https://content.pstmn.io/bee0dcde-523b-439c-bd5d-c1d1de1ac6f6/c2QtdmVyaWZ5LnBuZw==">
+
+      Adding a sending domain helps achieve and/or prevent the following:
+
+      1. When a request is received from the `/relay` endpoints, we detect the domain in the **`from_email`** of the request, if the domain is added and verified on your `Segnivo Messaging` account, we sign/attach a DKIM signature using the verified sending domain.
+          
+      2. If the domain has not been added or has not been verified on your account, we will attach a DKIM signature using a domain in our pool of domains which we use for every other user.
+          
+      3. If you wish to use Segnivo as a [Smart host](https://en.wikipedia.org/wiki/Smart_host) for just relaying messages and do not want us to sign and attach a DKIM signature to your email, whether you have verified the sending domain or not, set the **`sign_dkim`** value in your requests to `false`.
+          
+
+      #### **Emails Landing In Spam Folder or Getting Bounced/Rejected**
+
+      There is a high chance that your emails will land in the spam folder or even worse get rejected (especially for Yahoo and Gmail destinations) if you do not [add and verify your sending domain](https://messaging.segnivo.com/sending_domains). Adding and verifying your sending domain ensures that your emails are fully compliant with [SPF](https://resources.segnivo.com/glossary/spf/), [DKIM](https://resources.segnivo.com/glossary/dkim/), [DMARC](https://resources.segnivo.com/glossary/dmarc/), and [Return-Path](https://resources.segnivo.com/glossary/return-path/) alignments. Also, we may throttle and place significant hourly API request limits on your account if your domain is not verified.
+
+      In addition, if your sending domain is newly registered (less than 3 weeks old), we recommend you keep your sending volume low as most destinations, especially Gmail and Yahoo will reject/throttle the delivery of your messages to protect their users from spam.
+
+      #### **Webhook Notifications**
+
+      If you wish to receive webhook notifications for your emails please set up the delivery URL, secret key and the `events` for you which you want to be notified in your [developer dashboard](https://messaging.segnivo.com/developers).
+
+      A `POST` request would be made to your delivery URL with the event data and an `x-segnivo-signature` header which you can use to verify that the delivery came from us. The signature is a `sha256` hash of the `email_id` and `message_id` in the payload body, and the webhook signing key you provided in your developer dashboard all concatenated in that order (email_id + message_id + signing key).
+
+      You may choose to receive notifications for the following events; `sent`, `click`, `open`, `failed`, and `bounced`.
+
+      Below is a sample webhook notification payload for an email click event.
+
+      `{`
+
+      `"event":` `"email.click",`
+
+      `"event_id": 12325,`
+
+      `"email_id": 12379,`
+
+      `"email_uid": "66a6591a9e09f",`
+
+      `"subject": "Welcome to Segnivo",`
+
+      `"from_email": "support@segnivo.com",`
+
+      `"recipient": "hello@gmail.com",`
+
+      `"message_id": "1722177050905396.66a6561ae2f7d@segnivo.com", "created": "2024-07-28 15:10:27",`
+
+      `"ip_address": 163.123.4.85,`
+
+      `"user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",`
+
+      `"url": "`[<code>https://segnivo.com"</code>](https://segnivo.com)
+
+      `}`
+  - name: Email Address Verification
+    description: These endpoints help you programmatically validate or verify the validity of an email address, thus ensuring that you determine if an email address can receive messages before you send one to it.
+  - name: Email Campaigns
+    description: The `/messages` endpoints lets you manage the marketing campaigns and newsletters on your `Segnivo Messaging` account.
+  - name: Subscribers Contacts
+    description: The `/contacts` endpoints let you manage the subscribers/contacts added to the mailing lists on your `Segnivo Messaging` account.
+  - name: Mailing Lists
+    description: The `/lists` endpoints let you manage the mailing lists on your `Segnivo Messaging` account.
+paths:
+  /relay/send:
+    post:
+      tags:
+        - Relay Transactional Emails
+      summary: Send an Email
+      description: |-
+        The `/send` endpoint lets you send marketing and transactional emails from your `Segnivo Messaging` account.
+
+        The following data should be passed in JSON format in the request body
+
+        - **subject** - The subject of the email
+            
+        - **from_name** (optional) - The full name of the sender
+            
+        - **from_email** - The email of the sender
+            
+        - **reply_to** (optional) - The email to which replies should be sent
+            
+        - **content_type** (optional, defaults to `html`) - The content type of the email body. Accepts either `text` or `html`
+            
+        - **recipients** - An array/collection of email addresses to deliver this message, max. 50
+            
+        - **content** - The HTML or plain text content of the email
+            
+        - **preheader** (optional) - The email preheader
+            
+        - **custom_headers** (optional) - An object of custom headers to add to the email
+            
+        - **delivery_at** (optional) - The 10-digit unix timestamp of the date/time at which this email should be delivered
+            
+        - **attachments** (optional) - An array/collection of the URLs of files to attach to the email
+            
+        - **sign_dkim** (optional, defaults to `true`) - A boolean value on if a DKIM signature should be included in this message
+            
+        - **track_click** (optional, defaults to `true`) - A boolean value on if email clicks should be tracked. If `true` links in the email will be rewritten to enable tracking
+            
+        - **track_open** (optional, defaults to `true`) - A boolean value on if the email opens should be tracked
+            
+        - **is_transactional** (optional, defaults to `false`) - A boolean value to flag this email as a transactional email
+            
+
+        #### 🔖 Important
+
+        **`is_transactional`** must only be set to `true` for transactional emails. Setting this to `true` for marketing emails will result in your API access being revoked and your account disabled.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RelayEmailRequest"
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: <string>
+                status: success
+  /relay/raw:
+    post:
+      tags:
+        - Relay
+      summary: Send a Raw Email Message
+      description: |-
+        The `/raw` endpoint lets you send marketing and transactional emails from your `Segnivo Messaging` account by passing a raw RFC822 message to the `message` attribute in the request body.
+
+        The following parameters should be passed as a form data to the endpoint
+
+        - **message** - A raw RFC822 message
+            
+        - **sign_dkim** (optional, defaults to `true`) - A boolean value on if a DKIM signature should be included in this message
+            
+        - **track_click** (optional, defaults to `true`) - A boolean value on if email clicks should be tracked. If `true` links in the email will be rewritten to enable tracking
+            
+        - **track_open** (optional, defaults to `true`) - A boolean value on if the email opens should be tracked
+            
+        - **is_transactional** (optional, defaults to `false`) - A boolean value to flag this email as a transactional email
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/RelayRawEmailRequest"
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: <string>
+                status: success
+  /relay/emails/{id}:
+    get:
+      tags:
+        - Relay
+      summary: Fetch Emails
+      description: |-
+        The `/emails` endpoint lets you fetch one or more marketing/transactional email(s) from your `Segnivo Messaging` account and it accepts two **optional** parameters.
+
+        - The `id` string of the email to fetch provided as a path variable
+            
+        - The `limit` on the number of records to fetch (if email id is not provided) as a query string parameter. This value defaults to 100 if not provided.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+          description: The number of records to fetch
+          example: "100"
+        - name: id
+          in: path
+          schema:
+            type: string
+          required: true
+          description: The ID of the email to fetch
+          example: <string>
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: Fetch an email
+                  value:
+                    id: <string>
+                    from:
+                      email: <string>
+                      name: <string>
+                    reply_to: <string>
+                    subject: <string>
+                    status: sent
+                    recipients:
+                      - <string>
+                    content: <string>
+                    source: <string>
+                    spam_score: null
+                    track_open: true
+                    track_click: true
+                    sign_dkim: true
+                    is_transactional: false
+                    created_at: "2024-07-05T17:07:46.000000Z"
+                example-1:
+                  summary: Fetch a collection of emails
+                  value:
+                    emails:
+                      - id: <string>
+                        from:
+                          email: <string>
+                          name: <string>
+                        reply_to: <string>
+                        subject: <string>
+                        status: sent
+                        recipients:
+                          - <string>
+                        content: <string>
+                        source: <string>
+                        spam_score: null
+                        track_open: true
+                        track_click: true
+                        sign_dkim: true
+                        is_transactional: false
+                        created_at: "2024-07-05T17:07:46.000000Z"
+                      - id: <string>
+                        from:
+                          email: <string>
+                          name: <string>
+                        reply_to: <string>
+                        subject: <string>
+                        status: sent
+                        recipients:
+                          - <string>
+                        content: <string>
+                        source: <string>
+                        spam_score: null
+                        track_open: true
+                        track_click: true
+                        sign_dkim: true
+                        is_transactional: false
+                        created_at: "2024-07-05T17:07:46.000000Z"
+  /validate-email:
+    post:
+      tags:
+        - Email Address Verification
+      summary: Email Address Verification Validation
+      description: |-
+        The `/validate-email` endpoint allows you to pass the email addresses you wish to verify and get a response on each of their status.
+
+        The following data should be passed in JSON format in the request body
+
+        - **emails** - An array/collection containing a minimum of one and maximum of fifty email addresses for verification/validation.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailAddressVerificationRequest'
+      responses:
+        "200":
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Mon, 29 Jul 2024 02:05:38 GMT
+            Server:
+              schema:
+                type: string
+                example: Apache/2.4.54 (Win64) OpenSSL/1.1.1p PHP/7.4.33
+            X-Powered-By:
+              schema:
+                type: string
+                example: PHP/7.4.33
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+                example: "*"
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                example: Origin, X-Requested-With, Content-Type, Accept, Access-Control-Request-Method
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                example: GET, POST, PUT, PATCH
+            Content-Length:
+              schema:
+                type: integer
+                example: "121"
+            Keep-Alive:
+              schema:
+                type: string
+                example: timeout=5, max=100
+            Connection:
+              schema:
+                type: string
+                example: Keep-Alive
+            Content-Type:
+              schema:
+                type: string
+                example: application/json; charset=utf-8
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                verifications:
+                  - email: hello@gmail.com
+                    status: undeliverable
+                status: success
+  /messages:
+    post:
+      tags:
+        - Email Campaigns
+      summary: Create a Campaign
+      description: Creat an email campaign for processing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignCreateRequest'
+      responses:
+        "201":
+          description: Created
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: 1
+                message: <string>
+                attributes:
+                  uid: <string>
+                  type: regular
+                  plain: <string>
+                  name: <string>
+                  subject: <string>
+                  from_email: <string>
+                  from_name: <string>
+                  reply_to: <string>
+                  status: skipped
+                  delivery_at: <dateTime>
+                  created_at: <dateTime>
+                  updated_at: <dateTime>
+                  statistics:
+                    subscriber_count: <integer>
+                    delivered_rate: <float>
+                    open_count: <integer>
+                    open_rate: <float>
+                    click_count: <integer>
+                    click_rate: <float>
+                    abuse_feedback_count: <integer>
+                    bounce_count: <integer>
+                    unsubscribe_count: <integer>
+    get:
+      tags:
+        - Email Campaigns
+      summary: Get campaigns
+      description: Returns a collection of all your campaigns
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                - uid: <string>
+                  type: regular
+                  plain: <string>
+                  name: <string>
+                  subject: <string>
+                  from_email: <string>
+                  from_name: <string>
+                  reply_to: <string>
+                  status: bounced
+                  delivery_at: <dateTime>
+                  created_at: <dateTime>
+                  updated_at: <dateTime>
+                  statistics:
+                    subscriber_count: <integer>
+                    delivered_rate: <float>
+                    open_count: <integer>
+                    open_rate: <float>
+                    click_count: <integer>
+                    click_rate: <float>
+                    abuse_feedback_count: <integer>
+                    bounce_count: <integer>
+                    unsubscribe_count: <integer>
+                - uid: <string>
+                  type: regular
+                  plain: <string>
+                  name: <string>
+                  subject: <string>
+                  from_email: <string>
+                  from_name: <string>
+                  reply_to: <string>
+                  status: failed
+                  delivery_at: <dateTime>
+                  created_at: <dateTime>
+                  updated_at: <dateTime>
+                  statistics:
+                    subscriber_count: <integer>
+                    delivered_rate: <float>
+                    open_count: <integer>
+                    open_rate: <float>
+                    click_count: <integer>
+                    click_rate: <float>
+                    abuse_feedback_count: <integer>
+                    bounce_count: <integer>
+                    unsubscribe_count: <integer>
+  /messages/{uid}:
+    patch:
+      tags:
+        - Email Campaigns
+      summary: Update Campaign
+      description: Updates a previously added campaign. Only Active and Paused campaigns can be updated.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignUpdateRequest'
+      parameters:
+        - name: uid
+          in: path
+          schema:
+            type: string
+          required: true
+          description: (Required) The uid of the campaign to update
+          example: <string>
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: 1
+                message: <string>
+                attributes:
+                  uid: <string>
+                  type: regular
+                  plain: <string>
+                  name: <string>
+                  subject: <string>
+                  from_email: <string>
+                  from_name: <string>
+                  reply_to: <string>
+                  status: skipped
+                  delivery_at: <dateTime>
+                  created_at: <dateTime>
+                  updated_at: <dateTime>
+                  statistics:
+                    subscriber_count: <integer>
+                    delivered_rate: <float>
+                    open_count: <integer>
+                    open_rate: <float>
+                    click_count: <integer>
+                    click_rate: <float>
+                    abuse_feedback_count: <integer>
+                    bounce_count: <integer>
+                    unsubscribe_count: <integer>
+    get:
+      tags:
+        - Email Campaigns
+      summary: Get a campaign
+      description: Returns the specified campaign details
+      parameters:
+        - name: uid
+          in: path
+          schema:
+            type: string
+          required: true
+          description: (Required) The uid of the campaign to fetch
+          example: <string>
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                uid: <string>
+                type: plain-text
+                plain: <string>
+                name: <string>
+                subject: <string>
+                from_email: <string>
+                from_name: <string>
+                reply_to: <string>
+                status: sent
+                delivery_at: <dateTime>
+                created_at: <dateTime>
+                updated_at: <dateTime>
+                statistics:
+                  subscriber_count: <integer>
+                  delivered_rate: <float>
+                  open_count: <integer>
+                  open_rate: <float>
+                  click_count: <integer>
+                  click_rate: <float>
+                  abuse_feedback_count: <integer>
+                  bounce_count: <integer>
+                  unsubscribe_count: <integer>
+  /messages/{uid}/pause:
+    post:
+      tags:
+        - Email Campaigns
+      summary: Pause a campaign
+      description: Pause the specified campaign
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      parameters:
+        - name: uid
+          in: path
+          schema:
+            type: string
+          required: true
+          description: (Required) The uid of the campaign to pause
+          example: <string>
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: 1
+                message: <string>
+                campaign:
+                  uid: <string>
+                  type: plain-text
+                  plain: <string>
+                  name: <string>
+                  subject: <string>
+                  from_email: <string>
+                  from_name: <string>
+                  reply_to: <string>
+                  status: feedback
+                  delivery_at: <dateTime>
+                  created_at: <dateTime>
+                  updated_at: <dateTime>
+                  statistics:
+                    subscriber_count: <integer>
+                    delivered_rate: <float>
+                    open_count: <integer>
+                    open_rate: <float>
+                    click_count: <integer>
+                    click_rate: <float>
+                    abuse_feedback_count: <integer>
+                    bounce_count: <integer>
+                    unsubscribe_count: <integer>
+  /messages/{uid}/resume:
+    post:
+      tags:
+        - Email Campaigns
+      summary: Resume the delivery of a campaign
+      description: Resume delivery of the specified campaign
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      parameters:
+        - name: uid
+          in: path
+          schema:
+            type: string
+          required: true
+          description: (Required) The uid of the campaign to resume
+          example: <string>
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: 1
+                message: <string>
+                campaign:
+                  uid: <string>
+                  type: regular
+                  plain: <string>
+                  name: <string>
+                  subject: <string>
+                  from_email: <string>
+                  from_name: <string>
+                  reply_to: <string>
+                  status: sent
+                  delivery_at: <dateTime>
+                  created_at: <dateTime>
+                  updated_at: <dateTime>
+                  statistics:
+                    subscriber_count: <integer>
+                    delivered_rate: <float>
+                    open_count: <integer>
+                    open_rate: <float>
+                    olick_count: <integer>
+                    click_rate: <float>
+                    abuse_feedback_count: <integer>
+                    bounce_count: <integer>
+                    unsubscribe_count: <integer>
+  /messages/{uid}/delete:
+    post:
+      tags:
+        - Email Campaigns
+      summary: Delete a campaign
+      description: Delete the specified campaign
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      parameters:
+        - name: uid
+          in: path
+          schema:
+            type: string
+          required: true
+          description: (Required) The uid of the campaign to delete
+          example: <string>
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: 1
+                message: <string>
+  /contacts:
+    post:
+      tags:
+        - Subscribers Contacts
+      summary: Add a Contact
+      description: Add a new contact/subscriber to your mailing list
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddContactRequest'
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: 1
+                message: <string>
+                subscriber_uid: <string>
+    get:
+      tags:
+        - Subscribers Contacts
+      summary: Get contacts
+      description: |-
+        Returns a list of contacts/subscribers on your account
+
+        This endpoint accepts three **optional** query parameters
+
+        - `email` — An email address to search for. If set, the endpoint only returns subscribers that have an identical email address.
+            
+        - `per_page` — A limit on the number of records to return.
+            
+        - `page` — The parameter serves as an offset on the number of records returned.
+      parameters:
+        - name: email
+          in: query
+          schema:
+            type: string
+          description: An email address to search for.
+          example: <string>
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+          description: How many items should be returned ahead.
+          example: "20"
+        - name: page
+          in: query
+          schema:
+            type: integer
+          description: The offset for the items to be returned, helps in pagination.
+          example: "1"
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                - uid: <string>
+                  email: <string>
+                  first_name: <string>
+                  last_name: <string>
+                  phone: <integer>
+                  list_uid: <string>
+                  list: <string>
+                  status: unconfirmed
+                  verification_status: undeliverable
+                  avatar: <string>
+                - uid: <string>
+                  email: <string>
+                  first_name: <string>
+                  last_name: <string>
+                  phone: <integer>
+                  list_uid: <string>
+                  list: <string>
+                  status: subscribed
+                  verification_status: deliverable
+                  avatar: <string>
+  /contacts/{uid}:
+    patch:
+      tags:
+        - Subscribers Contacts
+      summary: Update Contact
+      description: Update the specified subscriber/contact
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactUpdateRequest'
+      parameters:
+        - name: uid
+          in: path
+          schema:
+            type: string
+          required: true
+          description: (Required) The uid of the contact to update.
+          example: <string>
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: 1
+                message: <string>
+                subscriber_uid: <string>
+    get:
+      tags:
+        - Subscribers Contacts
+      summary: Get a contact
+      description: Fetch detailed contact information for specified a contact
+      parameters:   
+        - name: uid
+          in: path
+          schema:
+            type: string
+          required: true
+          description: (Required) The uid of the contact to get.
+          example: <string>
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                uid: <string>
+                email: <string>
+                first_name: <string>
+                last_name: <string>
+                phone: <integer>
+                list_uid: <string>
+                list: <string>
+                status: blacklisted
+                verification_status: undeliverable
+                avatar: <string>
+  /contacts/{uid}/add-tag:
+    post:
+      tags:
+        - Subscribers Contacts
+      summary: Add tags to a contact
+      description: Add tags to an existing contact
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tag:  
+                  type: string
+                  description: "Tag for a contact."
+      parameters:
+        - name: uid
+          in: path
+          schema:
+            type: string
+          required: true
+          description: (Required) The uid of the contact to update with the tags.
+          example: <string>
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                subscriber_uid: <string>
+                tags:
+                  - <string>
+                  - <string>
+  /contacts/{uid}/subscribe:
+    patch:
+      tags:
+        - Subscribers Contacts
+      summary: Subscribe a contact
+      description: Subscribe a contact to a list
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      parameters:
+        - name: list_uid
+          in: query
+          schema:
+            type: string
+          description: (Required) The uid of the mail list to subscribe the contact.
+          example: <string>
+        - name: uid
+          in: path
+          schema:
+            type: string
+          required: true
+          description: (Required) The uid of the contact to subscribe.
+          example: <string>
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: 1
+                message: <string>
+  /contacts/{uid}/unsubscribe:
+    patch:
+      tags:
+        - Subscribers Contacts
+      summary: Unsubscribe a contact
+      description: Unsubscribe a contact from a list
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      parameters:
+        - name: list_uid
+          in: query
+          schema:
+            type: string
+          description: (Required) The uid of the mail list to unsubscribe the contact.
+          example: <string>
+        - name: uid
+          in: path
+          schema:
+            type: string
+          required: true
+          description: (Required) The uid of the contact to unsubscribe.
+          example: <string>
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: 1
+                message: <string>
+  /contacts/{uid}/delete:
+    post:
+      tags:
+        - Subscribers Contacts
+      summary: Delete a contact
+      description: Delete an existing contact
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      parameters:
+        - name: uid
+          in: path
+          schema:
+            type: string
+          required: true
+          description: (Required) The uid of the contact to delete.
+          example: <string>
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: 1
+                message: <string>
+  /lists:
+    post:
+      tags:
+        - Mailing Lists
+      summary: Create a Mailing List
+      description: Create a new mailing list
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MailingListRequest"
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: 1
+                message: <string>
+                list_uid: <string>
+    get:
+      tags:
+        - Mailing Lists
+      summary: Get mailing lists
+      description: Returns all your existing lists
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                - uid: <string>
+                  name: <string>
+                  from_email: <string>
+                  from_name: <string>
+                  created_at: <dateTime>
+                  updated_at: <dateTime>
+                  statistics:
+                    subscriber_count: <integer>
+                    open_rate: <float>
+                    click_rate: <float>
+                    unsubscribe_rate: <float>
+                    unsubscribe_count: <integer>
+                    unconfirmed_count: <integer>
+                - uid: <string>
+                  name: <string>
+                  from_email: <string>
+                  from_name: <string>
+                  created_at: <dateTime>
+                  updated_at: <dateTime>
+                  statistics:
+                    subscriber_count: <integer>
+                    open_rate: <float>
+                    click_rate: <float>
+                    unsubscribe_rate: <float>
+                    unsubscribe_count: <integer>
+                    unconfirmed_count: <integer>
+  /lists/{uid}:
+    patch:
+      tags:
+        - Mailing Lists
+      summary: Update a List
+      description: Update an existing mailing list
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MailingListRequest"
+      parameters:
+        - name: uid
+          in: path
+          schema:
+            type: string
+          required: true
+          description: (Required) The uid of the list to update.
+          example: <string>
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                list_uid: <string>
+    get:
+      tags:
+        - Mailing Lists
+      summary: Get a list
+      description: Returns detailed information about a specified list
+      parameters:
+        - name: uid
+          in: path
+          schema:
+            type: string
+          required: true
+          description: (Required) The uid of the mailing list to fetch.
+          example: <string>
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                uid: <string>
+                name: <string>
+                from_email: <string>
+                from_name: <string>
+                created_at: <dateTime>
+                updated_at: <dateTime>
+                statistics:
+                  subscriber_count: <integer>
+                  open_rate: <float>
+                  click_rate: <float>
+                  unsubscribe_rate: <float>
+                  unsubscribe_count: <integer>
+                  unconfirmed_count: <integer>
+  /lists/{uid}/add-field:
+    post:
+      tags:
+        - Mailing Lists
+      summary: Add a field
+      description: Add a field to an existing list
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MailingListAddFieldRequest"
+      parameters:
+        - name: uid
+          in: path
+          schema:
+            type: string
+          required: true
+          description: (Required) The uid of the list to add a field to.
+          example: <string>
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                field:
+                  type: number
+                  label: <string>
+                  tag: <string>
+                  id: <integer>
+                  uid: <string>
+                  mail_list_id: <integer>
+                  required: <boolean>
+                  visible: <boolean>
+                  created_at: <dateTime>
+                  updated_at: <dateTime>
+  /lists/{uid}/delete:
+    post:
+      tags:
+        - Mailing Lists
+      summary: Delete a list
+      description: Delete an existing list
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      parameters:
+        - name: uid
+          in: path
+          schema:
+            type: string
+          required: true
+          description: (Required) The uid of the list to delete.
+          example: <string>
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: 1
+                message: <string>

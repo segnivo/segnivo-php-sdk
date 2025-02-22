@@ -1,0 +1,7 @@
+
+/.openapi-generator
+openapitools.json
+generate-sdks.js
+config.js
+config.json
+.env
